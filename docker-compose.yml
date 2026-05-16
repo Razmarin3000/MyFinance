@@ -1,0 +1,16 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: finka
+    environment:
+      - OR_KEY
+    ports:
+      - "2931:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./finka.html:/usr/share/nginx/html/finka.html:ro
+      - ./css:/usr/share/nginx/html/css:ro
+      - ./js:/usr/share/nginx/html/js:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    restart: unless-stopped

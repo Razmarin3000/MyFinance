@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#FFDD2D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Мои финансы</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="/config.js"></script>
+  <script>    const savedTheme = localStorage.getItem('mf-theme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }  </script>
+</head>
+<body>
+
+<div class="app-container">
+
+  <header class="app-header">
+    <div class="header-title">Мои финансы</div>
+    <div class="header-actions">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Переключить тему">🌙</button>
+      <button class="import-btn" id="import-btn" aria-label="Импорт CSV выписки">📥</button>
+      <div class="month-switch">
+        <button class="nav-btn" id="prev-month" aria-label="Предыдущий месяц">&#8249;</button>
+        <span class="month-label" id="month-label">Май 2026</span>
+        <button class="nav-btn" id="next-month" aria-label="Следующий месяц">&#8250;</button>
+      </div>
+    </div>
+  </header>
+  <input type="file" id="import-file" accept=".csv,text/csv" hidden>
+
+  <main class="app-body">
+    <div class="stats">
+      <div class="stat-card balance">
+        <div class="stat-label">Баланс</div>
+        <div class="stat-value" id="stat-balance">0 ₽</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Доход (мес)</div>
+        <div class="stat-value income" id="stat-income">0 ₽</div>
+        <div class="stat-sub" id="stat-income-sub">за месяц</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Расход (мес)</div>
+        <div class="stat-value expense" id="stat-expense">0 ₽</div>
+        <div class="stat-sub" id="stat-expense-sub">за месяц</div>
+      </div>
+    </div>
+
+    <div class="insights" id="insights-block">
+      <div class="insight-row" id="insight-forecast">
+        <div class="insight-icon" id="insight-trend-icon">📈</div>
+        <div id="insight-forecast-text">Загрузка прогноза…</div>
+      </div>
+      <div class="insight-row" id="insight-topcategory">
+        <div class="insight-icon" id="insight-cat-icon">💡</div>
+        <div id="insight-cat-text">Загрузка статистики…</div>
+      </div>
+      <div class="cat-bar" id="cat-bar"></div>
+    </div>
+
+    <div class="section-head">
+      <h3>Транзакции</h3>
+      <span class="tx-count" id="tx-count">0 операций</span>
+    </div>
+
+    <div class="tx-list" id="tx-list"></div>
+
+    <div class="empty-state" id="empty-state" hidden>
+      <div class="empty-emoji">💸</div>
+      <div class="empty-text">Пока ничего не добавлено. Жми + чтобы начать</div>
+    </div>
+  </main>
+
+  <div class="analytics-body" id="analytics-body" hidden>
+    <div class="analytics-summary">
+      <div class="stat-label"><span id="analytics-title-type">Расходы</span> в <span id="analytics-month-label">—</span></div>
+      <div class="analytics-total" id="analytics-total">0 ₽</div>
+      <div class="analytics-summary-line" id="analytics-summary-line">…</div>
+    </div>
+
+    <div class="analytics-type-toggle">
+      <button class="analytics-toggle-btn active" data-type="expense">➖ Расходы</button>
+      <button class="analytics-toggle-btn" data-type="income">➕ Доходы</button>
+    </div>
+
+    <div class="analytics-view-toggle">
+      <button class="view-toggle-btn active" data-aview="overview">📊 Всего</button>
+      <button class="view-toggle-btn" data-aview="detailed">📋 Подробно</button>
+    </div>
+
+    <div class="analytics-overview" id="analytics-overview">
+      <div class="analytics-pie-wrap">
+        <div class="analytics-pie" id="analytics-pie">
+          <div class="analytics-pie-center">
+            <div class="label">Всего</div>
+            <div id="analytics-pie-total">0 ₽</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-legend" id="analytics-legend"></div>
+
+      <div class="section-head"><h3>По категориям</h3></div>
+      <div class="analytics-cards" id="analytics-cards"></div>
+
+      <div class="analytics-empty" id="analytics-empty" hidden>
+        <div class="empty-emoji">📊</div>
+        <div class="empty-text">В этом месяце ещё нет операций</div>
+      </div>
+    </div>
+
+    <div class="analytics-detailed" id="analytics-detailed" hidden>
+      <div class="detailed-cat-filter" id="detailed-cat-filter">
+        <button class="detail-cat-btn active" data-dcat="all">📊 Все</button>
+        <button class="detail-cat-btn" data-dcat="food">🍔 Еда</button>
+        <button class="detail-cat-btn" data-dcat="transport">🚌 Трансп.</button>
+        <button class="detail-cat-btn" data-dcat="entertainment">🎮 Развл.</button>
+        <button class="detail-cat-btn" data-dcat="study">📚 Учёба</button>
+        <button class="detail-cat-btn" data-dcat="other">💡 Другое</button>
+      </div>
+      <div class="detailed-chart" id="detailed-chart">
+        <div class="histogram" id="histogram">
+          <div class="hist-empty">Выберите категорию</div>
+        </div>
+      </div>
+      <div class="detailed-stats" id="detailed-stats">
+        <div class="detail-stat">
+          <div class="detail-stat-label">В день</div>
+          <div class="detail-stat-value" id="detail-avg-day">0 ₽</div>
+        </div>
+        <div class="detail-stat">
+          <div class="detail-stat-label">В неделю</div>
+          <div class="detail-stat-value" id="detail-avg-week">0 ₽</div>
+        </div>
+        <div class="detail-stat">
+          <div class="detail-stat-label">В месяц</div>
+          <div class="detail-stat-value" id="detail-avg-month">0 ₽</div>
+        </div>
+      </div>
+      <div class="ai-buttons">
+        <button class="ai-main-btn" id="ai-ask">🧠 Анализ ИИ</button>
+        <button class="ai-gear-btn" id="ai-gear" title="Настройки API">⚙️</button>
+      </div>
+      <div class="ai-settings" id="ai-settings" hidden>
+        <div class="ai-key-status" id="ai-key-status"></div>
+        <div class="ai-api-row">
+          <input type="password" class="ai-api-input" id="ai-api-key" placeholder="Свой ключ OpenRouter" autocomplete="off">
+          <button class="ai-save-btn" id="ai-save-key">Сохранить</button>
+        </div>
+        <button class="ai-clear-btn" id="ai-clear-key">Удалить свой ключ</button>
+      </div>
+      <div class="ai-answer" id="ai-answer" hidden>
+        <div class="ai-thinking" id="ai-thinking" hidden>Думаю</div>
+        <div class="ai-answer-label" id="ai-answer-label" hidden>Ответ:</div>
+        <div class="ai-answer-text" id="ai-answer-text"></div>
+      </div>
+      <div class="ai-hint" id="ai-hint"></div>
+    </div>
+  </div>
+
+</div>
+
+<button class="fab" id="fab" aria-label="Добавить транзакцию">+</button>
+
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="sheet" aria-modal="true" role="dialog">
+
+  <div class="step step-type" id="step-type">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Тип операции</div>
+    <div class="type-grid">
+      <button class="type-btn income-btn" data-type="income">
+        <span class="type-emoji">➕</span>
+        <span class="type-label">Доход</span>
+      </button>
+      <button class="type-btn expense-btn" data-type="expense">
+        <span class="type-emoji">➖</span>
+        <span class="type-label">Расход</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="step step-category" id="step-category">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Категория</div>
+    <div class="cat-grid">
+      <button class="cat-btn" data-cat="food"><span class="cat-emoji">🍔</span><span class="cat-label">Еда</span></button>
+      <button class="cat-btn" data-cat="transport"><span class="cat-emoji">🚌</span><span class="cat-label">Транспорт</span></button>
+      <button class="cat-btn" data-cat="entertainment"><span class="cat-emoji">🎮</span><span class="cat-label">Развлечения</span></button>
+      <button class="cat-btn" data-cat="study"><span class="cat-emoji">📚</span><span class="cat-label">Учёба</span></button>
+      <button class="cat-btn cat-btn-wide" data-cat="other"><span class="cat-emoji">💡</span><span class="cat-label">Другое</span></button>
+    </div>
+  </div>
+
+  <div class="step step-amount" id="step-amount">
+    <div class="sheet-handle"></div>
+    <div class="amount-display" id="amount-display">0 ₽</div>
+    <div class="numpad">
+      <button class="key" data-key="1">1</button>
+      <button class="key" data-key="2">2</button>
+      <button class="key" data-key="3">3</button>
+      <button class="key" data-key="4">4</button>
+      <button class="key" data-key="5">5</button>
+      <button class="key" data-key="6">6</button>
+      <button class="key" data-key="7">7</button>
+      <button class="key" data-key="8">8</button>
+      <button class="key" data-key="9">9</button>
+      <button class="key key-del" data-key="del">⌫</button>
+      <button class="key" data-key="0">0</button>
+      <button class="key key-confirm" id="key-confirm" data-key="confirm" disabled>✓</button>
+    </div>
+    <div class="date-row">
+      <button class="date-toggle" id="date-toggle">Дата: <span id="date-label">сегодня</span> ▾</button>
+      <div class="date-menu" id="date-menu" hidden>
+        <button class="date-opt" data-offset="0">Сегодня</button>
+        <button class="date-opt" data-offset="1">Вчера</button>
+        <button class="date-opt" data-offset="2">Позавчера</button>
+        <button class="date-opt" data-offset="custom">Выбрать…</button>
+        <input type="date" id="date-custom" class="date-custom-input">
+      </div>
+    </div>
+    <div class="comment-row">
+      <button class="comment-toggle" id="comment-toggle">+ комментарий</button>
+      <input type="text" class="comment-input" id="comment-input" placeholder="Комментарий…" hidden>
+    </div>
+  </div>
+
+</div>
+
+<div class="sheet sheet-edit" id="sheet-edit" aria-modal="true" role="dialog">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Редактирование</div>
+
+  <div class="edit-type-toggle">
+    <button class="edit-type-btn" data-type="income">➕ Доход</button>
+    <button class="edit-type-btn" data-type="expense">➖ Расход</button>
+  </div>
+
+  <div class="edit-cat-grid">
+    <button class="edit-cat-btn" data-cat="food"><span>🍔</span><span>Еда</span></button>
+    <button class="edit-cat-btn" data-cat="transport"><span>🚌</span><span>Транспорт</span></button>
+    <button class="edit-cat-btn" data-cat="entertainment"><span>🎮</span><span>Развл.</span></button>
+    <button class="edit-cat-btn" data-cat="study"><span>📚</span><span>Учёба</span></button>
+    <button class="edit-cat-btn" data-cat="other"><span>💡</span><span>Другое</span></button>
+  </div>
+
+  <div class="edit-field">
+    <label class="edit-label">Сумма</label>
+    <input type="text" inputmode="decimal" class="edit-amount-input" id="edit-amount">
+  </div>
+
+  <div class="edit-field">
+    <label class="edit-label">Дата</label>
+    <input type="date" class="edit-date-input" id="edit-date">
+  </div>
+
+  <div class="edit-field">
+    <label class="edit-label">Комментарий</label>
+    <input type="text" class="edit-comment-input" id="edit-comment" placeholder="не указан">
+  </div>
+
+  <div class="edit-actions">
+    <button class="edit-delete-btn" id="edit-delete-btn">🗑 Удалить</button>
+    <button class="edit-save-btn" id="edit-save-btn">✓ Сохранить</button>
+  </div>
+</div>
+
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab-btn active" data-view="dashboard">📊 Дашборд</button>
+  <button class="tab-btn" data-view="analytics">📈 Отчёты</button>
+</nav>
+
+<div class="sheet prompt-sheet" id="prompt-sheet" aria-modal="true" role="dialog">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Промпт для анализа</div>
+  <textarea class="prompt-textarea" id="prompt-text" readonly></textarea>
+  <div class="prompt-actions">
+    <button class="prompt-btn prompt-copy-btn" id="prompt-copy">Копировать</button>
+    <a class="prompt-btn prompt-open-btn" id="prompt-url" href="#" target="_blank">Открыть ChatGPT</a>
+  </div>
+  <button class="prompt-close-btn" id="prompt-close">Закрыть</button>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
